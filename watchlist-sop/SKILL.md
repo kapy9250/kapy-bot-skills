@@ -9,6 +9,9 @@ description: Run watchlist-based Git hygiene and synchronization for multiple re
 - Watchlist file: `/workspace/workspaces/cody/config/repo_watchlist.json`
 - Scanner script: `/workspace/workspaces/cody/config/git_watchlist_status.py`
 - Report output: `/workspace/workspaces/cody/reports/git_watchlist_status.json`
+- Monitoring scope policy:
+  - Primary goal: monitor **agent system health files** (SOUL/AGENTS/USER/TOOLS, config, memory, skills) for long-term stable operation.
+  - Secondary goal: monitor selected **focus projects** explicitly listed in watchlist.
 - Exclusion policy:
   - Exclude `_archive` paths
   - Exclude directories whose basename starts with `polymarket`
@@ -31,7 +34,11 @@ Use these categories:
 ## Step 3) Apply SOP actions
 ### A) DIRTY_ONLY
 - Inspect file-level changes with `git status --porcelain` and `git diff`.
-- Keep and commit only meaningful assets (docs/config/skill updates/memory if policy allows).
+- Apply root-level triage rules:
+  - New **root directory**: ignore by default unless clearly OpenClaw agent assets (`memory/`, `skills/`, `config/`, `prompts/`, `templates/`, `references/`, `tasks/`).
+  - New **root file**: classify source first; keep only agent/system files, ignore user-created or service-generated artifacts.
+  - If source cannot be judged with high confidence: stop and report as `needs_user_decision`.
+- Keep and commit only meaningful assets (docs/config/skill updates/memory under policy).
 - Revert or ignore runtime noise (cache/temp/state files).
 - If repeated noise appears, update `.gitignore` before commit.
 
@@ -60,7 +67,8 @@ After operations, always return:
 1. Summary metrics (before/after)
 2. Per-repo action result
 3. **Changed file list per commit** (A/M/D paths)
-4. Remaining inconsistent repos (if any)
+4. For each root-level new file/dir: classification result (`agent_asset` / `runtime_noise` / `needs_user_decision`)
+5. Remaining inconsistent repos (if any)
 
 ## Output rules
 - Be concise and operational.
